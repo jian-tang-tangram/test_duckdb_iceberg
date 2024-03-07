@@ -53,6 +53,7 @@ jobs:
       BUILD_JEMALLOC: 1
       BUILD_JSON: 1
       FORCE_WARN_UNUSED: 1
+      VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
     steps:
       - uses: actions/checkout@v3
         with:
@@ -96,6 +97,8 @@ jobs:
       OVERRIDE_JDBC_OS_ARCH: arm64
       JAVA_HOME: ../../jdk8u345-b01
       DUCKDB_PLATFORM: linux_arm64
+      VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -188,6 +191,8 @@ jobs:
       OSX_BUILD_UNIVERSAL: 1
       ENABLE_EXTENSION_AUTOLOADING: 1
       ENABLE_EXTENSION_AUTOINSTALL: 1
+      VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+
     steps:
       - uses: actions/checkout@v3
         with:
