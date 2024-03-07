@@ -43,8 +43,6 @@ jobs:
   java-linux-amd64:
     name: Java Linux (amd64)
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/pypa/manylinux2014_x86_64
     env:
       GEN: ninja
       ENABLE_EXTENSION_AUTOLOADING: 1
@@ -55,19 +53,46 @@ jobs:
       FORCE_WARN_UNUSED: 1
       VCPKG_TOOLCHAIN_PATH: ${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
     steps:
+      - name: Install required ubuntu packages
+        run: |
+          sudo apt-get update -y -qq
+          sudo apt-get install -y -qq software-properties-common
+          sudo add-apt-repository ppa:git-core/ppa
+          sudo apt-get update -y -qq
+          sudo apt-get install -y -qq ninja-build make gcc-multilib g++-multilib libssl-dev wget openjdk-8-jdk zip maven unixodbc-dev libc6-dev-i386 lib32readline6-dev libssl-dev libcurl4-gnutls-dev libexpat1-dev gettext unzip build-essential checkinstall libffi-dev curl libz-dev openssh-client
+          sudo apt-get install -y -qq tar pkg-config
+          sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
+      - name: Install Git 2.18.5
+        run: |
+          wget https://github.com/git/git/archive/refs/tags/v2.18.5.tar.gz
+          tar xvf v2.18.5.tar.gz
+          cd git-2.18.5
+          make
+          sudo make prefix=/usr install
+          git --version
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          submodules: 'true'
 
-      - uses: ./.github/actions/manylinux_2014_setup
+      - name: Setup ManyLinux2014
+        run: |
+          ./duckdb/scripts/setup_manylinux2014.sh general aws-cli ccache ssh openssl python_alias
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11.1
         with:
-          ninja-build: 1
-          ccache: 1
-          jdk: 1
+          vcpkgGitCommitId: a42af01b72c28a8e1d7b48107b33e4f286a55ef6
 
-      - name: Build
-        shell: bash
-        run: make release
+      - name: Build extension
+        env:
+          GEN: ninja
+          STATIC_LIBCPP: 1
+        run: |
+          make release
 
       - name: Deploy
         shell: bash
