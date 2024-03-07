@@ -1,0 +1,61 @@
+# name: test/sql/iceberg.test
+# description: test iceberg extension
+# group: [iceberg]
+
+# Before we load the extension, this will fail
+statement error
+SELECT * FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg');
+----
+Catalog Error
+
+require iceberg
+
+# parquet is required for scanning this parquet-backed iceberg table
+statement error
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', ALLOW_MOVED_PATHS=TRUE);
+----
+Catalog Error
+
+require parquet
+
+### Scanning latest snapshot
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', ALLOW_MOVED_PATHS=TRUE);
+----
+51793
+
+# Scanning 1st snapshot
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', 3776207205136740581::UBIGINT, ALLOW_MOVED_PATHS=TRUE);
+----
+60175
+
+# Scanning 2nd snapshot
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', 7635660646343998149::UBIGINT, ALLOW_MOVED_PATHS=TRUE);
+----
+51793
+
+# Scanning latest snapshot at specific moment in time
+# note in the data we have:
+#   1 = 2023-02-15 15:07:54.504
+#	2 = 2023-02-15 15:08:14.73
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', '2023-02-15 15:07:54.504'::TIMESTAMP, ALLOW_MOVED_PATHS=TRUE);
+----
+60175
+
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', '2023-02-15 15:07:54.729'::TIMESTAMP, ALLOW_MOVED_PATHS=TRUE);
+----
+60175
+
+query I
+SELECT count(*) FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', '2023-02-15 15:08:14.73'::TIMESTAMP, ALLOW_MOVED_PATHS=TRUE);
+----
+51793
+
+statement error
+FROM ICEBERG_SCAN('data/iceberg/lineitem_iceberg', '2023-02-15 15:07:54.503'::TIMESTAMP, ALLOW_MOVED_PATHS=TRUE);
+----
+IO Error: Could not find latest snapshots for timestamp 2023-02-15 15:07:54.503
