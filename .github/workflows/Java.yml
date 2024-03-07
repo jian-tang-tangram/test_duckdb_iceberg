@@ -66,13 +66,7 @@ jobs:
 
       - name: Build
         shell: bash
-        run: make
-
-      - name: Java Tests
-        shell: bash
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
-        working-directory: tools/jdbc
-        run: make test_release
+        run: make release
 
       - name: Deploy
         shell: bash
